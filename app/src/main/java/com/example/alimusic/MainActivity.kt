@@ -1,5 +1,6 @@
 package com.example.alimusic
 
+import android.media.AudioManager
 import android.media.MediaPlayer
 import android.net.Uri
 import androidx.appcompat.app.AppCompatActivity
@@ -12,8 +13,11 @@ import java.util.*
 class MainActivity : AppCompatActivity() {
     lateinit var binding: ActivityMainBinding
     lateinit var mediaPlayer: MediaPlayer
+    lateinit var timer: Timer
     var isPlaying = false
     var isUserChanging = false
+    var isMuted = false
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
@@ -48,13 +52,33 @@ class MainActivity : AppCompatActivity() {
 
     private fun configureVolune() {
 
+        val audioManager = getSystemService(AUDIO_SERVICE) as AudioManager
+
+        if (isMuted){
+            audioManager.adjustVolume(AudioManager.ADJUST_UNMUTE,AudioManager.FLAG_SHOW_UI)
+            binding.btnVolumeOnOff.setImageResource(R.drawable.ic_volume_on)
+            isMuted = false
+        }else{
+            audioManager.adjustVolume(AudioManager.ADJUST_MUTE,AudioManager.FLAG_SHOW_UI)
+            binding.btnVolumeOnOff.setImageResource(R.drawable.ic_volume_off)
+            isMuted = true
+        }
+
     }
 
     private fun goAfterMusic() {
 
+        val now = mediaPlayer.currentPosition
+        val newValue = now + 10000
+        mediaPlayer.seekTo(newValue)
+
     }
 
     private fun goBeforeMusic() {
+
+        val now = mediaPlayer.currentPosition
+        val newValue = now - 10000
+        mediaPlayer.seekTo(newValue)
 
     }
 
@@ -86,7 +110,7 @@ class MainActivity : AppCompatActivity() {
 
         binding.txtRight.text = convertMillisToString(mediaPlayer.duration.toLong())
 
-        val timer = Timer()
+        timer = Timer()
         timer.schedule(object : TimerTask() {
             override fun run() {
                 runOnUiThread {
@@ -104,6 +128,15 @@ class MainActivity : AppCompatActivity() {
         val minute = duration / (1000 * 60) % 60
 
         return java.lang.String.format(Locale.US, "%02d:%02d", minute, second)
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+
+//        mediaPlayer.isLooping = true
+        timer.cancel()
+        mediaPlayer.release()
+
     }
 
 }
